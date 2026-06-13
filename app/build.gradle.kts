@@ -12,9 +12,17 @@ android {
   
   // Custom fallback to ensure compilation on AI Studio (which might not have the brand new 35.0.2)
   // while keeping 35.0.2 as the primary target for Termux.
-  val localBuildTools = file("${android.sdkDirectory}/build-tools")
-  val has35 = file("${android.sdkDirectory}/build-tools/35.0.2").exists()
-  val availableVersions = localBuildTools.listFiles()?.map { it.name } ?: emptyList()
+  val sdkDir: File? = try {
+    val method = android.javaClass.getMethod("getSdkDirectory")
+    method.invoke(android) as? File
+  } catch (e: Exception) {
+    val envHome = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+    if (envHome != null) file(envHome) else null
+  }
+  
+  val localBuildTools = if (sdkDir != null) file("${sdkDir}/build-tools") else null
+  val has35 = localBuildTools?.resolve("35.0.2")?.exists() == true
+  val availableVersions = localBuildTools?.listFiles()?.map { it.name } ?: emptyList()
   buildToolsVersion = when {
     has35 -> "35.0.2"
     availableVersions.isNotEmpty() -> availableVersions.first()
