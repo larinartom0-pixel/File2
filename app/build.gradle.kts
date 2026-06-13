@@ -9,7 +9,20 @@ plugins {
 android {
   namespace = "com.example"
   compileSdk = 34
-  buildToolsVersion = "35.0.2"
+  
+  // Custom fallback to ensure compilation on AI Studio (which might not have the brand new 35.0.2)
+  // while keeping 35.0.2 as the primary target for Termux.
+  val localBuildTools = file("${android.sdkDirectory}/build-tools")
+  val has35 = file("${android.sdkDirectory}/build-tools/35.0.2").exists()
+  val availableVersions = localBuildTools.listFiles()?.map { it.name } ?: emptyList()
+  buildToolsVersion = when {
+    has35 -> "35.0.2"
+    availableVersions.isNotEmpty() -> availableVersions.first()
+    else -> "35.0.2"
+  }
+  
+  println("Termux Compatibility Check - Available Build Tools in environment: $availableVersions")
+  println("Termux Compatibility Check - Selected Build Tools: $buildToolsVersion")
 
   defaultConfig {
     applicationId = "com.aistudio.mediaconverter.retrox"
